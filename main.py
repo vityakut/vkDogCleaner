@@ -61,7 +61,7 @@ def get_config(conf_file='config.toml'):
 def get_groups_ids(groups):
 	resgr = []
 	for group in groups:
-		res = (re.split(r'vk.com/', group))[1]
+		res = (re.sub(r'^(https{0,1}://){0,1}vk.com/', '', group))
 		res = (re.sub(r'^club', '', res))
 		res = (re.sub(r'^public', '', res))
 		resgr.append(res)
