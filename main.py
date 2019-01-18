@@ -1,3 +1,5 @@
+#!/usr/bin/env python3.6
+
 import vk_api
 import time
 import qtoml
@@ -166,4 +168,5 @@ def main():
 
 if __name__ == '__main__':
 	tmp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp")
+	input("start")
 	main()
