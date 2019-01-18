@@ -2,6 +2,7 @@ import vk_api
 import time
 import qtoml
 import os
+import re
 
 global config
 global session
@@ -29,12 +30,19 @@ def vk_login():
 		login=config['login'],
 		password=config['password'],
 		app_id=config['app']['id'],
-		captcha_handler=captcha_handler)
+		captcha_handler=captcha_handler,
+		api_version="5.92",
+	)
 	try:
 		session.auth()
-		print("Login complete")
+		user = session.get_api().users.get()
+		print("Login complete as {0} {1} (https://vk.com/id{2})".format(
+			user[0]['first_name'], user[0]['last_name'], user[0]['id']))
 		return session
 	except vk_api.AuthError as error_msg:
+		print(error_msg)
+		return
+	except vk_api.VkApiError as error_msg:
 		print(error_msg)
 		return
 
@@ -50,6 +58,19 @@ def get_config(conf_file='config.toml'):
 		exit(str(os.path.join(curr_path, conf_file)) + " not found")
 
 
+def get_groups_ids(groups):
+	resgr = []
+	for group in groups:
+		res = (re.split(r'vk.com/', group))[1]
+		res = (re.sub(r'^club', '', res))
+		res = (re.sub(r'^public', '', res))
+		resgr.append(res)
+	api = session.get_api()
+	result = api.groups.getById(group_ids=",".join(resgr))
+	resgr = [i['id'] for i in result]
+	return resgr
+
+
 def get_blocked_users_from_tmp(gid):
 	file_tmp = os.path.join(tmp_path, "%s.tmp" % str(gid))
 	if os.path.isfile(file_tmp):
@@ -63,11 +84,8 @@ def get_blocked_users_from_tmp(gid):
 
 
 def get_blocked_users(gid):
-	print("get users from {0}".format(gid))
 	file_tmp = os.path.join(tmp_path, "%s.tmp" % str(gid))
-	total = 0
 	page = 0
-	offset = 0
 	limit = 1000
 	banned = []
 	if os.path.isfile(file_tmp):
@@ -75,24 +93,23 @@ def get_blocked_users(gid):
 
 	api = session.get_api()
 	tmp = api.groups.getById(group_id=gid)
-	print("https://vk.com/{0} - {1}".format(tmp[0]['screen_name'], tmp[0]['name']))
+	print("Получение подписчиков из {1} (https://vk.com/{0})".format(tmp[0]['screen_name'], tmp[0]['name']))
 
 	while True:
 		offset = page * limit
-		res = api.groups.getMembers(group_id=gid, offset=offset, count=limit, fields='city, sex, bdate', version='5.92')
+		res = api.groups.getMembers(group_id=gid, offset=offset, count=limit, fields='city, sex, bdate')
 		total = res['count']
 		# total = 15
 		for item in res['items']:
-			if ('deactivated' in item.keys()):
+			if 'deactivated' in item.keys():
 				banned.append(item['id'])
 		page = page + 1
 		if total < offset + limit:
-			print('DONE')
 			break
 		else:
-			print(str(page) + ' SLEEP')
 			time.sleep(1/3)
-	print(len(banned))
+
+	print("{0} собак из {1} пользователей".format(len(banned), total))
 	log_to_file(banned, file_tmp)
 	return banned
 
@@ -102,6 +119,7 @@ def remove_blocked_users(gid, blocked):
 	clear_mode = config['clear_mode']
 	clear_percent = config['clear_percent']
 	clear_count = config['clear_count']
+	api = session.get_api()
 	if clear_mode == 0:
 		clear_count = total_blocked
 	elif clear_mode == 1:
@@ -117,19 +135,33 @@ def remove_blocked_users(gid, blocked):
 		if clear_count > total_blocked:
 			clear_count = total_blocked
 	print("Будет удалено {0} собак".format(clear_count))
+	i = 0
+	while i < clear_count:
+		try:
+			res = api.groups.removeUser(group_id=int(gid), user_id=blocked[i])
+			if res:
+				print("{0} id{1} удален из {2}".format(i, blocked[i], gid))
+			i += 1
+		except vk_api.VkApiError as error_msg:
+			print(error_msg)
+			return False
 
 
 def main():
 	print("Start")
-	get_config()
-	print(config)
+	if not get_config():
+		exit("Error! Config not found")
+	outfile = open('new_filename.toml', 'w')
+	qtoml.dump(config, outfile)
 	vk_login()
 	print("--------------")
-	for gid in config['groups']:
-		# blocked = get_blocked_users(gid)
-		blocked = get_blocked_users_from_tmp(gid)
+	groups = get_groups_ids(config['groups'])
+	for gid in groups:
+		blocked = get_blocked_users(gid)
+		# blocked = get_blocked_users_from_tmp(gid)
 		if blocked:
 			remove_blocked_users(gid, blocked)
+		print("--------------")
 
 
 if __name__ == '__main__':
