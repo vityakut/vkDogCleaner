@@ -1,0 +1,6 @@
+venv
+.idea
+*.log
+tmp
+*.tmp
+vk_config.v2.json
