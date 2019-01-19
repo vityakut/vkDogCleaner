@@ -4,3 +4,7 @@ venv
 tmp
 *.tmp
 vk_config.v2.json
+__pycache__/
+build/
+dist/
+

@@ -1,5 +1,11 @@
 #!/usr/bin/env python3.6
-
+# -*- coding: utf-8 -*-
+"""
+:authors: vityakut
+:license: MIT License
+:url: https://github.com/vityakut/vkDogCleaner
+:copyright: (c) 2019 vityakut
+"""
 import vk_api
 import time
 import qtoml
