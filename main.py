@@ -11,6 +11,7 @@ import time
 import qtoml
 import os
 import re
+import sys
 
 global config
 global session
@@ -48,11 +49,9 @@ def vk_login():
 			user[0]['first_name'], user[0]['last_name'], user[0]['id']))
 		return session
 	except vk_api.AuthError as error_msg:
-		print(error_msg)
-		return
+		sys.exit(error_msg)
 	except vk_api.VkApiError as error_msg:
-		print(error_msg)
-		return
+		sys.exit(error_msg)
 
 
 def get_config(conf_file='config.toml'):
@@ -63,7 +62,7 @@ def get_config(conf_file='config.toml'):
 		config = qtoml.load(infile)
 		return config
 	else:
-		exit(str(os.path.join(curr_path, conf_file)) + " not found")
+		sys.exit(str(os.path.join(curr_path, conf_file)) + " not found")
 
 
 def get_groups_ids(groups):
@@ -158,9 +157,7 @@ def remove_blocked_users(gid, blocked):
 def main():
 	print("Start")
 	if not get_config():
-		exit("Error! Config not found")
-	outfile = open('new_filename.toml', 'w')
-	qtoml.dump(config, outfile)
+		sys.exit("Error! Config not found")
 	vk_login()
 	print("--------------")
 	groups = get_groups_ids(config['groups'])
@@ -172,7 +169,10 @@ def main():
 		print("--------------")
 
 
+
+
 if __name__ == '__main__':
 	tmp_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp")
-	input("start")
 	main()
+	raw = input("press Enter for exit")
+	print("Closing...")

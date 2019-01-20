@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['main.py'],
-             pathex=['/home/vityakut/hwcode/vkbotcleaner'],
+             pathex=['G:\\Progects\\vkDogCleaner'],
              binaries=[],
              datas=[],
              hiddenimports=[],
@@ -29,4 +29,4 @@ exe = EXE(pyz,
           strip=False,
           upx=True,
           runtime_tmpdir=None,
-          console=True )
+          console=True , icon='icon.ico')
